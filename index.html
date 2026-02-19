@@ -22,12 +22,44 @@
 
         .card { background: white; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); padding: 1.5rem; margin-bottom: 1rem; }
         
-        /* 캘린더 스타일 */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; background: #e5e7eb; border: 1px solid #e5e7eb; }
-        .calendar-cell { background: white; min-height: 60px; padding: 2px; font-size: 0.75rem; position: relative; cursor: pointer; }
+        /* 캘린더 스타일 개선 (고정 크기, 줄바꿈) */
+        .calendar-grid { 
+            display: grid; 
+            grid-template-columns: repeat(7, 1fr); 
+            gap: 1px; 
+            background: #e5e7eb; 
+            border: 1px solid #e5e7eb; 
+        }
+        .calendar-cell { 
+            background: white; 
+            height: 90px; /* 고정 높이 */
+            padding: 4px; 
+            font-size: 0.75rem; 
+            position: relative; 
+            cursor: pointer; 
+            overflow: hidden; /* 넘치는 내용 숨김 */
+        }
         .calendar-cell:hover { background-color: #f9fafb; }
+        /* 오늘 날짜 강조 */
+        .calendar-cell.today {
+            background-color: #fffbeb; /* 연한 노랑 */
+            border: 2px solid #fbbf24;
+        }
+
         .calendar-header { background: #f3f4f6; font-weight: bold; text-align: center; padding: 5px 0; font-size: 0.8rem; }
-        .event-badge { display: block; border-radius: 2px; padding: 1px 3px; margin-top: 2px; font-size: 0.65rem; color: white; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        
+        .event-badge { 
+            display: block; 
+            border-radius: 2px; 
+            padding: 1px 3px; 
+            margin-top: 2px; 
+            font-size: 0.65rem; 
+            color: white; 
+            /* 줄바꿈 허용 */
+            white-space: normal; 
+            word-break: break-all;
+            line-height: 1.1;
+        }
     </style>
 </head>
 <body class="text-gray-800 antialiased">
@@ -96,29 +128,42 @@
                             <option value="teacher">교사</option>
                         </select>
                         <input type="text" id="create-name" placeholder="이름" class="w-full border p-2 rounded">
-                        <!-- 파이어베이스는 이메일 로그인이 기본이므로 아이디 대신 이메일 입력으로 변경 -->
                         <input type="email" id="create-email" placeholder="이메일 (예: student@school.com)" class="w-full border p-2 rounded">
                         <input type="password" id="create-pw" placeholder="비밀번호 (6자리 이상)" class="w-full border p-2 rounded">
                         <select id="assign-teacher" class="w-full border p-2 rounded bg-gray-50">
                             <option value="">담당 교사 선택</option>
-                            <!-- JS로 교사 목록 로드 -->
                         </select>
                         <button onclick="app.createUser()" class="w-full bg-green-600 text-white p-2 rounded font-bold hover:bg-green-700 mt-2">계정 생성</button>
                     </div>
                 </div>
 
-                <!-- 학사 일정/평가 업로드 -->
+                <!-- 학생 명단 일괄 업로드 (CSV) -->
+                <div class="card bg-green-50 border border-green-100">
+                     <h3 class="font-bold text-sm mb-2 text-green-800"><i class="fas fa-file-excel mr-1"></i>학생 명단 일괄 업로드 (CSV)</h3>
+                     <p class="text-xs text-gray-500 mb-2">형식: 이름,이메일,비밀번호 (콤마로 구분)</p>
+                     <input type="file" id="student-csv" accept=".csv" class="block w-full text-xs text-gray-500
+                        file:mr-2 file:py-1 file:px-2
+                        file:rounded-full file:border-0
+                        file:text-xs file:font-semibold
+                        file:bg-green-50 file:text-green-700
+                        hover:file:bg-green-100 mb-2
+                     ">
+                     <button onclick="app.uploadStudentCSV()" class="w-full bg-green-600 text-white p-2 rounded font-bold text-sm hover:bg-green-700">명단 업로드 실행</button>
+                </div>
+
+                <!-- 학사 일정 업로드 -->
                 <div class="card">
                     <h3 class="font-bold text-sm mb-3 text-gray-600">일정 등록</h3>
                     <div class="space-y-2">
-                        <input type="text" id="notice-content" placeholder="일정 제목 (예: 중간고사)" class="w-full border p-2 rounded">
-                        <textarea id="notice-desc" placeholder="상세 설명 (예: 1~3단원, 교과서 50p까지)" class="w-full border p-2 rounded h-20 text-sm"></textarea>
+                        <input type="text" id="notice-content" placeholder="일정 제목" class="w-full border p-2 rounded">
+                        <textarea id="notice-desc" placeholder="상세 설명" class="w-full border p-2 rounded h-16 text-sm"></textarea>
+                        <input type="text" id="notice-link" placeholder="참고 링크 (http://...)" class="w-full border p-2 rounded text-sm">
                         <div class="flex gap-2">
-                            <select id="notice-type" class="border p-2 rounded bg-white">
+                             <input type="date" id="notice-date" class="w-full border p-2 rounded">
+                             <select id="notice-type" class="border p-2 rounded bg-white">
                                 <option value="event">행사</option>
-                                <option value="exam">평가/과제</option>
+                                <option value="exam">평가</option>
                             </select>
-                            <input type="date" id="notice-date" class="w-full border p-2 rounded">
                         </div>
                         <button onclick="app.addNotice('admin')" class="w-full bg-blue-500 text-white p-2 rounded font-bold hover:bg-blue-600">캘린더 등록</button>
                     </div>
@@ -141,8 +186,9 @@
                 <!-- 교사용 캘린더 -->
                 <div class="card !p-0 overflow-hidden mb-6">
                     <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                        <h3 class="font-bold text-gray-700"><i class="far fa-calendar-alt mr-1"></i> 학사 일정</h3>
-                        <span class="text-xs text-gray-500" id="teacher-month-display">2026.03</span>
+                        <button onclick="app.changeMonth(-1, 'teacher')" class="text-gray-500 hover:text-blue-600"><i class="fas fa-chevron-left"></i></button>
+                        <h3 class="font-bold text-gray-700" id="teacher-month-display">2026.03</h3>
+                        <button onclick="app.changeMonth(1, 'teacher')" class="text-gray-500 hover:text-blue-600"><i class="fas fa-chevron-right"></i></button>
                     </div>
                     <div class="calendar-grid bg-gray-200">
                         <div class="calendar-header text-red-500">일</div>
@@ -162,6 +208,12 @@
                     <div class="space-y-2">
                         <input type="text" id="teacher-notice-content" placeholder="제목 (예: 1반 수학 수행평가)" class="w-full border p-2 rounded bg-white">
                         <textarea id="teacher-notice-desc" placeholder="상세 내용 입력" class="w-full border p-2 rounded h-16 text-sm bg-white"></textarea>
+                        
+                        <div class="grid grid-cols-2 gap-2">
+                            <input type="text" id="teacher-notice-link" placeholder="관련 링크 (URL)" class="w-full border p-2 rounded text-sm bg-white">
+                            <input type="text" id="teacher-notice-file" placeholder="첨부파일명 (예: 안내문.hwp)" class="w-full border p-2 rounded text-sm bg-white">
+                        </div>
+
                         <div class="flex gap-2">
                             <select id="teacher-notice-type" class="border p-2 rounded bg-white">
                                 <option value="exam">평가/과제</option>
@@ -175,7 +227,7 @@
 
                 <!-- 외부 링크 버튼 -->
                 <div class="grid grid-cols-2 gap-3 mb-4">
-                    <button onclick="alert('대한민국 장학 재단 및 시도 교육청 장학 사업 페이지로 이동합니다.')" class="bg-white border border-indigo-100 text-indigo-700 p-3 rounded-xl font-bold text-sm text-center shadow-sm hover:bg-indigo-50">
+                    <button onclick="window.open('https://www.kosaf.go.kr/', '_blank')" class="bg-white border border-indigo-100 text-indigo-700 p-3 rounded-xl font-bold text-sm text-center shadow-sm hover:bg-indigo-50">
                         <i class="fas fa-graduation-cap block text-xl mb-1 text-indigo-500"></i>장학 사업
                     </button>
                     <a href="tel:16008272" class="bg-white border border-green-100 text-green-700 p-3 rounded-xl font-bold text-sm text-center shadow-sm hover:bg-green-50">
@@ -219,8 +271,9 @@
                 <!-- 캘린더 섹션 -->
                 <div class="card !p-0 overflow-hidden">
                     <div class="p-4 border-b flex justify-between items-center bg-gray-50">
-                        <h3 class="font-bold text-gray-700"><i class="far fa-calendar-alt mr-1"></i> 학사 일정</h3>
-                        <span class="text-xs text-gray-500" id="current-month-display">2026.03</span>
+                        <button onclick="app.changeMonth(-1, 'student')" class="text-gray-500 hover:text-blue-600"><i class="fas fa-chevron-left"></i></button>
+                        <h3 class="font-bold text-gray-700" id="current-month-display">2026.03</h3>
+                        <button onclick="app.changeMonth(1, 'student')" class="text-gray-500 hover:text-blue-600"><i class="fas fa-chevron-right"></i></button>
                     </div>
                     
                     <!-- 달력 그리드 -->
@@ -254,6 +307,32 @@
                         <i class="fas fa-arrow-left"></i>
                     </button>
                     <h2 class="text-xl font-bold">📝 알찬 하루 기록</h2>
+                </div>
+
+                <!-- 수행평가 D-Day & 체크리스트 -->
+                <div class="card border-l-4 border-red-400">
+                    <h3 class="font-bold text-gray-800 mb-3 flex items-center gap-2">
+                        <i class="fas fa-tasks text-red-500"></i> 다가오는 수행평가 준비
+                    </h3>
+                    <div id="exam-checklist-container" class="space-y-3">
+                        <!-- JS로 시험 목록 로드 -->
+                        <p class="text-gray-500 text-sm">예정된 평가가 없습니다.</p>
+                    </div>
+                </div>
+
+                <!-- 오늘의 배움 & 느낌 -->
+                <div class="card">
+                    <h3 class="font-bold text-gray-800 mb-3"><i class="fas fa-book-open text-purple-500 mr-2"></i>오늘의 성장</h3>
+                    <div class="space-y-3">
+                        <div>
+                            <label class="text-xs font-bold text-gray-500">오늘의 배움</label>
+                            <textarea id="log-learning" placeholder="오늘 새로 알게 된 점은?" class="w-full border p-2 rounded text-sm h-16 bg-purple-50"></textarea>
+                        </div>
+                        <div>
+                            <label class="text-xs font-bold text-gray-500">오늘의 느낌</label>
+                            <textarea id="log-feeling" placeholder="오늘 하루 기분은 어땠나요?" class="w-full border p-2 rounded text-sm h-16 bg-purple-50"></textarea>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 식단 -->
@@ -323,10 +402,24 @@
                 <h3 id="schedule-modal-title" class="text-xl font-bold mb-1">제목</h3>
                 <p id="schedule-modal-date" class="text-sm text-gray-500 mb-4">날짜</p>
                 
-                <div class="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 min-h-[100px]">
+                <div class="bg-gray-50 p-4 rounded-lg text-sm text-gray-700 min-h-[100px] mb-2">
                     <h4 class="font-bold text-gray-500 text-xs mb-1">상세 내용/범위</h4>
-                    <p id="schedule-modal-desc">내용이 없습니다.</p>
+                    <p id="schedule-modal-desc" class="whitespace-pre-wrap">내용이 없습니다.</p>
                 </div>
+
+                <div id="schedule-modal-link-area" class="hidden mb-2">
+                    <h4 class="font-bold text-gray-500 text-xs mb-1">참고 링크</h4>
+                    <a id="schedule-modal-link" href="#" target="_blank" class="text-blue-600 underline text-sm break-all">이동하기</a>
+                </div>
+
+                <div id="schedule-modal-file-area" class="hidden">
+                    <h4 class="font-bold text-gray-500 text-xs mb-1">첨부 파일</h4>
+                    <div class="bg-gray-100 p-2 rounded text-sm flex items-center gap-2">
+                        <i class="fas fa-file-alt text-gray-500"></i>
+                        <span id="schedule-modal-file">파일이름</span>
+                    </div>
+                </div>
+
                 <button onclick="document.getElementById('schedule-modal').classList.add('hidden')" class="w-full mt-4 bg-gray-100 text-gray-700 p-2 rounded font-bold hover:bg-gray-200">닫기</button>
             </div>
         </div>
@@ -342,6 +435,18 @@
                     <button onclick="document.getElementById('consult-modal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 p-2 rounded-lg font-bold hover:bg-gray-300">취소</button>
                 </div>
             </div>
+        </div>
+
+        <!-- [모달] 학생: 메시지 알림 팝업 -->
+        <div id="message-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] px-4">
+             <div class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl text-center">
+                <div class="mb-4 text-4xl">💌</div>
+                <h2 class="text-xl font-bold mb-2 text-indigo-700">선생님의 메시지</h2>
+                <div class="bg-indigo-50 p-4 rounded-xl text-gray-700 font-medium mb-4 whitespace-pre-wrap" id="message-modal-content">
+                    메시지 내용
+                </div>
+                <button onclick="app.closeMessageModal()" class="w-full bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700">확인했어요!</button>
+             </div>
         </div>
 
         <!-- [모달] 교사: 상담 신청 목록 -->
@@ -421,7 +526,7 @@
     import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
     import { getFirestore, collection, addDoc, getDocs, doc, setDoc, updateDoc, arrayUnion, query, where, onSnapshot, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-    // 2. Firebase 설정 (제공해주신 설정 값)
+    // 2. Firebase 설정
     const firebaseConfig = {
       apiKey: "AIzaSyAKRuxaRzXWotucbDi2PqrbY-sUPLmIyYA",
       authDomain: "school-manager-9f5a4.firebaseapp.com",
@@ -438,66 +543,68 @@
     const auth = getAuth(firebaseApp);
     const db = getFirestore(firebaseApp);
 
-    // 4. 앱 로직 객체 생성 및 전역(window) 할당
-    // 모듈 스코프에서는 window에 할당해야 HTML onclick 이벤트가 인식합니다.
+    // 4. 앱 로직 객체
     window.app = {
         data: {
             currentUser: null,
             currentStudentIdForMsg: null,
-            teachers: [], // 교사 목록 캐싱
-            schedules: [], // DB에서 불러온 일정
-            consultations: [], // 상담 내역
+            viewYear: new Date().getFullYear(), // 달력 뷰 연도
+            viewMonth: new Date().getMonth(),   // 달력 뷰 월 (0~11)
+            teachers: [],
+            schedules: [],
+            consultations: [],
+            messages: [], // 학생용 메시지
             words: [
                 { word: 'Perseverance', mean: '인내심' },
                 { word: 'Integrity', mean: '진실성' },
-                { word: 'Empathy', mean: '공감' }
+                { word: 'Empathy', mean: '공감' },
+                { word: 'Resilience', mean: '회복탄력성' },
+                { word: 'Collaboration', mean: '협력' }
             ],
             quotes: [
                 "천리 길도 한 걸음부터.",
                 "실패는 성공의 어머니이다.",
-                "너 자신을 알라."
+                "너 자신을 알라.",
+                "꿈을 꾸는 자만이 계획을 세우고, 방법을 찾아낸다."
             ]
         },
 
         init: function() {
             this.renderPhoneOptions();
             
-            // 인증 상태 변화 감지 (로그인 유지 확인)
+            // 인증 감지
             onAuthStateChanged(auth, async (user) => {
                 if (user) {
-                    // 로그인 된 상태 -> DB에서 유저 상세 정보 가져오기
                     const userDoc = await getDoc(doc(db, "users", user.uid));
                     if (userDoc.exists()) {
                         this.data.currentUser = { uid: user.uid, ...userDoc.data() };
                         this.updateHeaderWelcome();
                         
-                        // 데이터 실시간 동기화 시작
+                        // 데이터 구독
                         this.subscribeToSchedules();
                         
                         if (this.data.currentUser.role === 'teacher') {
                             this.renderTeacher();
                             this.showPage('teacher');
-                            this.subscribeToConsultations(); // 교사일 때 상담 내역 구독
+                            this.subscribeToConsultations();
                         } else if (this.data.currentUser.role === 'student') {
                             this.renderStudentMain();
                             this.showPage('student-main');
+                            this.checkNewMessages(); // 새 메시지 확인
                         } else if (this.data.currentUser.role === 'admin') {
                             this.renderAdmin();
                             this.showPage('admin');
+                            this.subscribeToSchedules();
                         }
-                    } else {
-                        // 인증은 됐는데 DB에 정보가 없는 경우 (관리자 등 특수 상황)
-                        console.log("User DB record missing");
                     }
                 } else {
-                    // 로그아웃 상태
                     this.data.currentUser = null;
                     this.showPage('login');
                 }
             });
         },
 
-        // 데이터 구독 (실시간 업데이트)
+        // 데이터 구독
         subscribeToSchedules: function() {
             const q = query(collection(db, "schedules"));
             onSnapshot(q, (snapshot) => {
@@ -505,13 +612,12 @@
                 snapshot.forEach((doc) => {
                     this.data.schedules.push({ id: doc.id, ...doc.data() });
                 });
-                // 현재 보고 있는 화면이 캘린더라면 갱신
-                const now = new Date();
-                if(this.data.currentUser?.role === 'teacher') {
-                    this.renderCalendar(now.getFullYear(), now.getMonth(), 'teacher-calendar-body', 'teacher-month-display');
-                } else {
-                    this.renderCalendar(now.getFullYear(), now.getMonth(), 'calendar-body', 'current-month-display');
-                }
+                // 현재 달력 갱신
+                const role = this.data.currentUser?.role === 'teacher' ? 'teacher' : 'student';
+                this.renderCalendar(this.data.viewYear, this.data.viewMonth, role);
+                
+                // 학생일 경우 체크리스트 갱신
+                if(role === 'student') this.renderExamChecklist();
             });
         },
         
@@ -523,12 +629,12 @@
                     this.data.consultations.push({ id: doc.id, ...doc.data() });
                 });
                 if(this.data.currentUser?.role === 'teacher') {
-                    this.renderTeacher(); // 알림 배지 갱신을 위해
+                    this.renderTeacher();
                 }
             });
         },
 
-        // 화면 전환 유틸
+        // 화면 전환
         showPage: function(pageId) {
             document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
             document.getElementById('page-' + pageId).classList.add('active');
@@ -541,17 +647,15 @@
             }
         },
 
-        // 로그인 로직
+        // 로그인/로그아웃
         showAdminLogin: function() {
             const pw = prompt("관리자 비밀번호를 입력하세요 (1234)");
             if (pw === '1234') {
-                // 관리자는 별도 DB 계정 없이 기능만 사용하도록 간단히 처리 (또는 관리자 계정 생성 필요)
-                // 여기서는 편의상 로컬 admin 모드로 진입
                 this.data.currentUser = { role: 'admin', name: '관리자' };
                 this.updateHeaderWelcome();
                 this.renderAdmin();
                 this.showPage('admin');
-                this.subscribeToSchedules(); // 관리자도 일정은 봐야함
+                this.subscribeToSchedules();
             } else {
                 alert("비밀번호가 틀렸습니다.");
             }
@@ -566,11 +670,9 @@
         processLogin: async function() {
             const email = document.getElementById('login-email').value;
             const pw = document.getElementById('login-pw').value;
-            
             try {
                 await signInWithEmailAndPassword(auth, email, pw);
                 document.getElementById('login-form-modal').classList.add('hidden');
-                // 로그인 성공 후 처리는 onAuthStateChanged에서 수행됨
             } catch (error) {
                 alert("로그인 실패: " + error.message);
             }
@@ -578,7 +680,6 @@
 
         logout: async function() {
             await signOut(auth);
-            // 로그아웃 후 처리는 onAuthStateChanged에서 수행됨
         },
         
         updateHeaderWelcome: function() {
@@ -600,7 +701,6 @@
             const teacherSelect = document.getElementById('assign-teacher');
             teacherSelect.innerHTML = '<option value="">담당 교사 선택</option>';
             
-            // DB에서 교사 목록 가져오기
             const q = query(collection(db, "users"), where("role", "==", "teacher"));
             const querySnapshot = await getDocs(q);
             this.data.teachers = [];
@@ -617,57 +717,103 @@
             teacherSelect.style.display = role === 'student' ? 'block' : 'none';
         },
 
-        createUser: async function() {
+        createUser: async function(overrideData = null) {
+            // overrideData가 있으면(CSV 업로드 등) 그것을 사용, 아니면 폼 데이터 사용
             const role = document.getElementById('create-role').value;
-            const name = document.getElementById('create-name').value;
-            const email = document.getElementById('create-email').value;
-            const pw = document.getElementById('create-pw').value;
             const teacherId = document.getElementById('assign-teacher').value;
+            
+            let name, email, pw;
+            if(overrideData) {
+                name = overrideData.name;
+                email = overrideData.email;
+                pw = overrideData.pw;
+            } else {
+                name = document.getElementById('create-name').value;
+                email = document.getElementById('create-email').value;
+                pw = document.getElementById('create-pw').value;
+            }
 
-            if (!name || !email || !pw) return alert("정보를 모두 입력하세요.");
-            if (role === 'student' && !teacherId) return alert("학생은 담당 교사가 필요합니다.");
+            if (!name || !email || !pw) {
+                if(!overrideData) alert("정보를 모두 입력하세요.");
+                return;
+            }
+            if (role === 'student' && !teacherId) {
+                if(!overrideData) alert("학생은 담당 교사가 필요합니다.");
+                return;
+            }
 
             try {
-                // 1. Auth에 계정 생성
                 const userCredential = await createUserWithEmailAndPassword(auth, email, pw);
                 const user = userCredential.user;
-
-                // 2. Firestore에 추가 정보 저장
                 await setDoc(doc(db, "users", user.uid), {
                     name: name,
                     email: email,
                     role: role,
-                    teacherId: teacherId || null, // 학생일 경우 교사 ID
+                    teacherId: teacherId || null,
                     points: 0,
                     avgPhone: 180,
                     logs: [],
                     lastActive: Date.now()
                 });
 
-                alert("계정이 생성되었습니다!");
-                
-                // 입력폼 초기화
-                document.getElementById('create-name').value = '';
-                document.getElementById('create-email').value = '';
-                document.getElementById('create-pw').value = '';
-                
+                if(!overrideData) {
+                    alert("계정이 생성되었습니다!");
+                    document.getElementById('create-name').value = '';
+                    document.getElementById('create-email').value = '';
+                    document.getElementById('create-pw').value = '';
+                }
             } catch (error) {
-                alert("계정 생성 실패: " + error.message);
+                if(!overrideData) alert("계정 생성 실패: " + error.message);
+                console.error(error);
             }
         },
 
+        // CSV 업로드
+        uploadStudentCSV: function() {
+            const fileInput = document.getElementById('student-csv');
+            const file = fileInput.files[0];
+            if(!file) return alert("파일을 선택해주세요.");
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const text = e.target.result;
+                const rows = text.split('\n');
+                let successCount = 0;
+                
+                // 첫 줄은 헤더일 수 있으니 데이터 확인 필요하지만 여기선 간단히
+                for(let row of rows) {
+                    const cols = row.split(',');
+                    if(cols.length >= 3) {
+                        const name = cols[0].trim();
+                        const email = cols[1].trim();
+                        const pw = cols[2].trim();
+                        if(name && email && pw) {
+                            await this.createUser({name, email, pw});
+                            successCount++;
+                        }
+                    }
+                }
+                alert(`${successCount}명의 학생 계정 생성을 시도했습니다.`);
+            };
+            reader.readAsText(file);
+        },
+
         addNotice: async function(source) {
-            let content, desc, date, type;
+            let content, desc, date, type, link, fileName;
+            
             if (source === 'admin') {
                 content = document.getElementById('notice-content').value;
                 desc = document.getElementById('notice-desc').value;
                 date = document.getElementById('notice-date').value;
                 type = document.getElementById('notice-type').value;
+                link = document.getElementById('notice-link').value;
             } else {
                 content = document.getElementById('teacher-notice-content').value;
                 desc = document.getElementById('teacher-notice-desc').value;
                 date = document.getElementById('teacher-notice-date').value;
                 type = document.getElementById('teacher-notice-type').value;
+                link = document.getElementById('teacher-notice-link').value;
+                fileName = document.getElementById('teacher-notice-file').value;
             }
 
             if(!content || !date) return alert('제목과 날짜는 필수입니다.');
@@ -678,17 +824,22 @@
                     title: content,
                     desc: desc || "상세 내용 없음",
                     type: type,
+                    link: link || "",
+                    fileName: fileName || "",
                     createdAt: Date.now()
                 });
                 alert("일정이 등록되었습니다.");
                 
-                // 입력창 초기화
-                if (source === 'admin') {
+                // 초기화
+                if(source==='admin') {
                     document.getElementById('notice-content').value = '';
                     document.getElementById('notice-desc').value = '';
+                    document.getElementById('notice-link').value = '';
                 } else {
                     document.getElementById('teacher-notice-content').value = '';
                     document.getElementById('teacher-notice-desc').value = '';
+                    document.getElementById('teacher-notice-link').value = '';
+                    document.getElementById('teacher-notice-file').value = '';
                 }
             } catch (e) {
                 alert("일정 등록 실패: " + e.message);
@@ -698,13 +849,11 @@
         // --- 교사 기능 ---
         renderTeacher: async function() {
             document.getElementById('student-header-controls').classList.add('hidden');
-            const now = new Date();
-            this.renderCalendar(now.getFullYear(), now.getMonth(), 'teacher-calendar-body', 'teacher-month-display');
+            this.renderCalendar(this.data.viewYear, this.data.viewMonth, 'teacher');
 
             const list = document.getElementById('student-list');
             list.innerHTML = '<div class="text-center py-2"><i class="fas fa-spinner fa-spin"></i> 로딩중...</div>';
             
-            // 내 담당 학생 가져오기
             const q = query(collection(db, "users"), where("teacherId", "==", this.data.currentUser.uid));
             const querySnapshot = await getDocs(q);
             
@@ -731,83 +880,10 @@
                 });
             }
 
-            // 상담 신청 확인
             const myConsults = this.data.consultations.filter(c => c.teacherId === this.data.currentUser.uid && c.status === 'pending');
             const alertBox = document.getElementById('teacher-consult-alert');
             if (myConsults.length > 0) alertBox.classList.remove('hidden');
             else alertBox.classList.add('hidden');
-        },
-
-        showConsultationList: async function() {
-            // 이미 구독중인 데이터 활용
-            const myConsults = this.data.consultations.filter(c => c.teacherId === this.data.currentUser.uid);
-            const listDiv = document.getElementById('consult-list');
-            listDiv.innerHTML = '';
-
-            if(myConsults.length === 0) {
-                listDiv.innerHTML = '<p class="text-center text-gray-500 py-4">상담 신청 내역이 없습니다.</p>';
-            } else {
-                // 학생 이름 매핑을 위해 학생 데이터를 한번 가져와야 할 수도 있음 (간소화를 위해 ID나 로직 생략 가능하지만 여기선 이름 표시 시도)
-                // 간단히 하기 위해 그냥 렌더링하거나, 필요시 비동기 로딩
-                for (let c of myConsults.reverse()) {
-                    let studentName = "학생";
-                    // 학생 이름 캐싱이 안되어 있다면 가져오기 (성능상 비효율적일 수 있으나 프로토타입용)
-                    const sDoc = await getDoc(doc(db, "users", c.studentId));
-                    if(sDoc.exists()) studentName = sDoc.data().name;
-
-                    const statusClass = c.status === 'pending' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500';
-                    const statusText = c.status === 'pending' ? '미확인' : '완료';
-                    
-                    const item = document.createElement('div');
-                    item.className = 'bg-gray-50 p-3 rounded-lg border border-gray-100';
-                    item.innerHTML = `
-                        <div class="flex justify-between items-start mb-2">
-                            <div>
-                                <span class="font-bold text-sm">${studentName}</span>
-                                <span class="text-xs text-gray-400 ml-1">${new Date(c.date).toLocaleDateString()}</span>
-                            </div>
-                            <span class="text-xs px-2 py-0.5 rounded-full ${statusClass}">${statusText}</span>
-                        </div>
-                        <p class="text-sm text-gray-700 bg-white p-2 rounded border border-gray-100 mb-2">${c.content}</p>
-                        ${c.status === 'pending' ? `<button onclick="app.completeConsultation('${c.id}')" class="w-full bg-blue-500 text-white text-xs py-1.5 rounded font-bold hover:bg-blue-600">상담 확인 완료</button>` : ''}
-                    `;
-                    listDiv.appendChild(item);
-                }
-            }
-            document.getElementById('teacher-consult-modal').classList.remove('hidden');
-        },
-
-        completeConsultation: async function(consultId) {
-            try {
-                await updateDoc(doc(db, "consultations", consultId), { status: 'completed' });
-                this.showConsultationList(); // 목록 갱신 (구독에 의해 자동 갱신되지만 UI 리프레시)
-            } catch (e) {
-                alert("오류 발생: " + e.message);
-            }
-        },
-
-        showStudentDetail: function(student) {
-            this.data.currentStudentIdForMsg = student.id; 
-            document.getElementById('modal-student-name').innerText = student.name;
-            document.getElementById('modal-points').innerText = `${student.points} P`;
-            
-            const thisMonth = new Date().getMonth();
-            const monthlyLogs = (student.logs || []).filter(l => new Date(l.date).getMonth() === thisMonth).length;
-            document.getElementById('modal-log-count').innerText = `${monthlyLogs} 회`;
-
-            const logsDiv = document.getElementById('modal-logs');
-            logsDiv.innerHTML = (student.logs || []).length ? '' : '<div class="text-center text-gray-400 py-4">기록 없음</div>';
-            
-            [...(student.logs || [])].reverse().slice(0, 5).forEach(log => {
-                logsDiv.innerHTML += `
-                    <div class="bg-white p-2 rounded border border-gray-100 mb-1">
-                        <span class="text-xs text-gray-400 block">${new Date(log.date).toLocaleDateString()}</span>
-                        <span class="text-xs text-gray-800">🏃 ${log.exerciseType} (${log.exerciseTime}분) / 📱 ${Math.floor(log.phone/60)}h ${log.phone%60}m</span>
-                    </div>
-                `;
-            });
-
-            document.getElementById('student-detail-modal').classList.remove('hidden');
         },
 
         // --- 학생 기능 ---
@@ -820,20 +896,37 @@
             document.getElementById('today-meaning').innerText = word.mean;
             document.getElementById('today-quote').innerText = `"${this.data.quotes[Math.floor(Math.random() * this.data.quotes.length)]}"`;
 
-            const now = new Date();
-            this.renderCalendar(now.getFullYear(), now.getMonth(), 'calendar-body', 'current-month-display');
+            this.renderCalendar(this.data.viewYear, this.data.viewMonth, 'student');
         },
-        
-        // 캘린더 렌더링
-        renderCalendar: function(year, month, containerId, monthDisplayId) {
+
+        // 달력 렌더링 (공통)
+        changeMonth: function(delta, role) {
+            let newMonth = this.data.viewMonth + delta;
+            if(newMonth > 11) {
+                this.data.viewYear++;
+                this.data.viewMonth = 0;
+            } else if(newMonth < 0) {
+                this.data.viewYear--;
+                this.data.viewMonth = 11;
+            } else {
+                this.data.viewMonth = newMonth;
+            }
+            this.renderCalendar(this.data.viewYear, this.data.viewMonth, role);
+        },
+
+        renderCalendar: function(year, month, role) {
+            const containerId = role === 'teacher' ? 'teacher-calendar-body' : 'calendar-body';
+            const displayId = role === 'teacher' ? 'teacher-month-display' : 'current-month-display';
+            
             const container = document.getElementById(containerId);
             if(!container) return;
             
             container.innerHTML = '';
-            document.getElementById(monthDisplayId).innerText = `${year}.${String(month + 1).padStart(2, '0')}`;
+            document.getElementById(displayId).innerText = `${year}.${String(month + 1).padStart(2, '0')}`;
 
             const firstDay = new Date(year, month, 1).getDay();
             const lastDate = new Date(year, month + 1, 0).getDate();
+            const today = new Date();
 
             for(let i=0; i<firstDay; i++) {
                 container.innerHTML += `<div class="calendar-cell bg-gray-100 cursor-default"></div>`;
@@ -841,10 +934,13 @@
 
             for(let d=1; d<=lastDate; d++) {
                 const dateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                // Firestore에서 가져온 데이터 사용
                 const schedules = this.data.schedules.filter(s => s.date === dateStr);
                 
-                let html = `<div class="calendar-cell" onclick="app.clickDate('${dateStr}')">
+                // 오늘 날짜 확인
+                const isToday = today.getFullYear() === year && today.getMonth() === month && today.getDate() === d;
+                const todayClass = isToday ? 'today' : '';
+
+                let html = `<div class="calendar-cell ${todayClass}" onclick="app.clickDate('${dateStr}')">
                     <span class="block text-right ${new Date(dateStr).getDay()===0?'text-red-500':''}">${d}</span>`;
                 
                 schedules.forEach(s => {
@@ -874,11 +970,256 @@
             document.getElementById('schedule-modal-title').innerText = schedule.title;
             document.getElementById('schedule-modal-date').innerText = schedule.date;
             document.getElementById('schedule-modal-desc').innerText = schedule.desc;
+
+            // 링크 & 파일 표시
+            const linkArea = document.getElementById('schedule-modal-link-area');
+            const linkEl = document.getElementById('schedule-modal-link');
+            if(schedule.link) {
+                linkArea.classList.remove('hidden');
+                linkEl.href = schedule.link.startsWith('http') ? schedule.link : 'http://' + schedule.link;
+            } else {
+                linkArea.classList.add('hidden');
+            }
+
+            const fileArea = document.getElementById('schedule-modal-file-area');
+            const fileEl = document.getElementById('schedule-modal-file');
+            if(schedule.fileName) {
+                fileArea.classList.remove('hidden');
+                fileEl.innerText = schedule.fileName;
+            } else {
+                fileArea.classList.add('hidden');
+            }
             
             document.getElementById('schedule-modal').classList.remove('hidden');
         },
 
-        // 상담 신청 (학생)
+        // 수행평가 D-Day & 체크리스트 (알찬 하루 페이지)
+        renderExamChecklist: function() {
+            const container = document.getElementById('exam-checklist-container');
+            const today = new Date();
+            // 미래의 'exam' 타입 일정만 필터링
+            const upcomingExams = this.data.schedules
+                .filter(s => s.type === 'exam' && new Date(s.date) >= new Date(today.getFullYear(), today.getMonth(), today.getDate()))
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+            
+            container.innerHTML = '';
+            if(upcomingExams.length === 0) {
+                container.innerHTML = '<p class="text-gray-500 text-sm">예정된 평가가 없습니다.</p>';
+                return;
+            }
+
+            upcomingExams.forEach(exam => {
+                const examDate = new Date(exam.date);
+                const diffTime = examDate - today;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                
+                // 체크리스트 저장된 값 찾기 (간단히 로컬 스토리지 키 사용하거나 DB에 넣어야 하지만, 여기선 UI만 구현하고 로컬저장 예시)
+                const savedNote = localStorage.getItem(`checklist_note_${this.data.currentUser.uid}_${exam.id}`) || '';
+                const isChecked = localStorage.getItem(`checklist_check_${this.data.currentUser.uid}_${exam.id}`) === 'true';
+
+                const div = document.createElement('div');
+                div.className = 'bg-white border border-red-100 p-3 rounded-lg shadow-sm';
+                div.innerHTML = `
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-sm text-red-600">${exam.title}</span>
+                        <span class="text-xs bg-red-100 text-red-600 px-2 py-1 rounded-full font-bold">D-${diffDays}</span>
+                    </div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <input type="checkbox" class="w-4 h-4 text-red-500" ${isChecked ? 'checked' : ''} onchange="app.saveChecklist('${exam.id}', this.checked, null)">
+                        <span class="text-xs text-gray-600">준비 완료</span>
+                    </div>
+                    <input type="text" value="${savedNote}" placeholder="준비물/메모 입력" class="w-full text-xs border-b border-gray-200 p-1 focus:outline-none focus:border-red-400" onblur="app.saveChecklist('${exam.id}', null, this.value)">
+                `;
+                container.appendChild(div);
+            });
+        },
+
+        saveChecklist: function(examId, checked, note) {
+            const uid = this.data.currentUser.uid;
+            if(checked !== null) localStorage.setItem(`checklist_check_${uid}_${examId}`, checked);
+            if(note !== null) localStorage.setItem(`checklist_note_${uid}_${examId}`, note);
+        },
+
+        // 데일리 로그 + 배움/느낌 저장
+        submitDailyLog: async function() {
+            const morning = document.getElementById('food-morning').value;
+            const dinner = document.getElementById('food-dinner').value;
+            const exType = document.getElementById('exercise-type').value;
+            const exTime = document.getElementById('exercise-time').value;
+            const phone = document.getElementById('phone-usage').value;
+            const learning = document.getElementById('log-learning').value;
+            const feeling = document.getElementById('log-feeling').value;
+
+            if(!morning || !dinner || !exType || !exTime || !phone) return alert("식단, 운동, 폰 사용량은 필수입니다.");
+
+            const log = {
+                date: new Date().toISOString(),
+                morning, dinner, exerciseType: exType, exerciseTime: exTime, phone,
+                learning: learning || "",
+                feeling: feeling || ""
+            };
+
+            const me = this.data.currentUser;
+            const thisMonth = new Date().getMonth();
+            const monthlyCount = (me.logs || []).filter(l => new Date(l.date).getMonth() === thisMonth).length;
+            
+            let msg = "오늘 하루도 수고했어요! 저장 완료 📝";
+            let newPoints = me.points;
+
+            if(monthlyCount === 20) {
+                newPoints += 100;
+                msg += "\n\n🎉 월 20회 기록 달성! +100P 지급!";
+            }
+
+            try {
+                await updateDoc(doc(db, "users", me.uid), {
+                    logs: arrayUnion(log),
+                    points: newPoints,
+                    lastActive: Date.now()
+                });
+                
+                if(!me.logs) me.logs = [];
+                me.logs.push(log);
+                me.points = newPoints;
+                
+                alert(msg);
+                
+                document.getElementById('food-morning').value = '';
+                document.getElementById('food-dinner').value = '';
+                document.getElementById('exercise-type').value = '';
+                document.getElementById('exercise-time').value = '';
+                document.getElementById('phone-usage').value = '';
+                document.getElementById('log-learning').value = '';
+                document.getElementById('log-feeling').value = '';
+                document.getElementById('phone-feedback').classList.add('hidden');
+                
+                this.showPage('student-main');
+                this.renderStudentMain(); 
+            } catch (e) {
+                alert("저장 실패: " + e.message);
+            }
+        },
+
+        // 메시지 기능 (교사 -> 학생)
+        openWarningModal: function() {
+            document.getElementById('student-detail-modal').classList.add('hidden');
+            document.getElementById('warn-preset').value = "활동을 조금 더 열심히 해볼까요? 할 수 있어요!";
+            this.toggleCustomWarning();
+            document.getElementById('warning-modal').classList.remove('hidden');
+        },
+
+        toggleCustomWarning: function() {
+            const val = document.getElementById('warn-preset').value;
+            const customArea = document.getElementById('warn-custom');
+            if (val === 'custom') customArea.classList.remove('hidden');
+            else customArea.classList.add('hidden');
+        },
+
+        sendWarningMessage: async function() {
+            let msg = document.getElementById('warn-preset').value;
+            if (msg === 'custom') msg = document.getElementById('warn-custom').value;
+            if (!msg) return alert("메시지를 입력하세요.");
+            
+            try {
+                // 메시지 컬렉션에 저장 (to: 학생ID, from: 교사ID, read: false)
+                await addDoc(collection(db, "messages"), {
+                    to: this.data.currentStudentIdForMsg,
+                    from: this.data.currentUser.uid,
+                    content: msg,
+                    read: false,
+                    createdAt: Date.now()
+                });
+                alert("메시지가 전송되었습니다.");
+                document.getElementById('warning-modal').classList.add('hidden');
+            } catch(e) {
+                alert("전송 실패: " + e.message);
+            }
+        },
+
+        checkNewMessages: function() {
+            // 학생 로그인 시 읽지 않은 메시지 체크
+            const q = query(collection(db, "messages"), 
+                where("to", "==", this.data.currentUser.uid), 
+                where("read", "==", false)
+            );
+            
+            onSnapshot(q, (snapshot) => {
+                snapshot.forEach((doc) => {
+                    this.showMessageModal(doc.id, doc.data().content);
+                });
+            });
+        },
+
+        showMessageModal: function(msgId, content) {
+            document.getElementById('message-modal-content').innerText = content;
+            document.getElementById('message-modal').classList.remove('hidden');
+            // 확인 버튼 누르면 읽음 처리하기 위해 ID 저장
+            this.data.currentMsgId = msgId;
+        },
+
+        closeMessageModal: async function() {
+            document.getElementById('message-modal').classList.add('hidden');
+            if(this.data.currentMsgId) {
+                await updateDoc(doc(db, "messages", this.data.currentMsgId), { read: true });
+                this.data.currentMsgId = null;
+            }
+        },
+
+        // 상담 등 기타 함수들 (기존 유지)
+        showStudentDetail: function(student) {
+            this.data.currentStudentIdForMsg = student.id; 
+            document.getElementById('modal-student-name').innerText = student.name;
+            document.getElementById('modal-points').innerText = `${student.points} P`;
+            const thisMonth = new Date().getMonth();
+            const monthlyLogs = (student.logs || []).filter(l => new Date(l.date).getMonth() === thisMonth).length;
+            document.getElementById('modal-log-count').innerText = `${monthlyLogs} 회`;
+            const logsDiv = document.getElementById('modal-logs');
+            logsDiv.innerHTML = (student.logs || []).length ? '' : '<div class="text-center text-gray-400 py-4">기록 없음</div>';
+            [...(student.logs || [])].reverse().slice(0, 5).forEach(log => {
+                logsDiv.innerHTML += `
+                    <div class="bg-white p-2 rounded border border-gray-100 mb-1">
+                        <span class="text-xs text-gray-400 block">${new Date(log.date).toLocaleDateString()}</span>
+                        <span class="text-xs text-gray-800">🏃 ${log.exerciseType} (${log.exerciseTime}분) / 📱 ${Math.floor(log.phone/60)}h ${log.phone%60}m</span>
+                    </div>
+                `;
+            });
+            document.getElementById('student-detail-modal').classList.remove('hidden');
+        },
+
+        showConsultationList: async function() {
+            const myConsults = this.data.consultations.filter(c => c.teacherId === this.data.currentUser.uid);
+            const listDiv = document.getElementById('consult-list');
+            listDiv.innerHTML = '';
+            if(myConsults.length === 0) {
+                listDiv.innerHTML = '<p class="text-center text-gray-500 py-4">상담 신청 내역이 없습니다.</p>';
+            } else {
+                for (let c of myConsults.reverse()) {
+                    let studentName = "학생";
+                    const sDoc = await getDoc(doc(db, "users", c.studentId));
+                    if(sDoc.exists()) studentName = sDoc.data().name;
+                    const statusClass = c.status === 'pending' ? 'bg-red-100 text-red-600' : 'bg-gray-100 text-gray-500';
+                    const statusText = c.status === 'pending' ? '미확인' : '완료';
+                    const item = document.createElement('div');
+                    item.className = 'bg-gray-50 p-3 rounded-lg border border-gray-100';
+                    item.innerHTML = `
+                        <div class="flex justify-between items-start mb-2">
+                            <div><span class="font-bold text-sm">${studentName}</span><span class="text-xs text-gray-400 ml-1">${new Date(c.date).toLocaleDateString()}</span></div>
+                            <span class="text-xs px-2 py-0.5 rounded-full ${statusClass}">${statusText}</span>
+                        </div>
+                        <p class="text-sm text-gray-700 bg-white p-2 rounded border border-gray-100 mb-2">${c.content}</p>
+                        ${c.status === 'pending' ? `<button onclick="app.completeConsultation('${c.id}')" class="w-full bg-blue-500 text-white text-xs py-1.5 rounded font-bold hover:bg-blue-600">상담 확인 완료</button>` : ''}
+                    `;
+                    listDiv.appendChild(item);
+                }
+            }
+            document.getElementById('teacher-consult-modal').classList.remove('hidden');
+        },
+        
+        completeConsultation: async function(consultId) {
+            await updateDoc(doc(db, "consultations", consultId), { status: 'completed' });
+            this.showConsultationList();
+        },
+
         openConsultationModal: function() {
             document.getElementById('consult-content').value = '';
             document.getElementById('consult-modal').classList.remove('hidden');
@@ -887,10 +1228,8 @@
         submitConsultation: async function() {
             const content = document.getElementById('consult-content').value;
             if(!content) return alert("내용을 입력해주세요.");
-
             const teacherId = this.data.currentUser.teacherId;
             if(!teacherId) return alert("배정된 교사가 없습니다.");
-
             try {
                 await addDoc(collection(db, "consultations"), {
                     studentId: this.data.currentUser.uid,
@@ -899,18 +1238,12 @@
                     date: new Date().toISOString(),
                     status: 'pending'
                 });
-                alert("상담 신청이 완료되었습니다. 선생님께서 확인하실 거예요!");
+                alert("상담 신청 완료!");
                 document.getElementById('consult-modal').classList.add('hidden');
-            } catch (e) {
-                alert("상담 신청 실패: " + e.message);
-            }
+            } catch (e) { alert("오류: " + e.message); }
         },
 
-        // 데일리 로그
-        goToDailyLog: function() {
-            this.showPage('student-log');
-        },
-
+        goToDailyLog: function() { this.showPage('student-log'); },
         renderPhoneOptions: function() {
             const select = document.getElementById('phone-usage');
             for(let i=0; i<=600; i+=30) {
@@ -925,16 +1258,12 @@
                 select.appendChild(option);
             }
         },
-
         checkPhoneUsage: function() {
             const time = parseInt(document.getElementById('phone-usage').value);
             if(isNaN(time)) return;
-
             const feedbackBox = document.getElementById('phone-feedback');
             feedbackBox.classList.remove('hidden');
-            
             const avg = this.data.currentUser.avgPhone; 
-
             if (time < avg) {
                 feedbackBox.className = "p-3 rounded-lg text-sm font-bold text-center animate-pulse bg-green-100 text-green-700";
                 feedbackBox.innerHTML = `🌟 훌륭해요! 평균(${Math.floor(avg/60)}h)보다 적게 사용했네요.`;
@@ -943,118 +1272,16 @@
                 feedbackBox.innerHTML = `💪 괜찮아요! 내일은 조금 더 줄여볼까요?`;
             }
         },
-
-        submitDailyLog: async function() {
-            const morning = document.getElementById('food-morning').value;
-            const dinner = document.getElementById('food-dinner').value;
-            const exType = document.getElementById('exercise-type').value;
-            const exTime = document.getElementById('exercise-time').value;
-            const phone = document.getElementById('phone-usage').value;
-
-            if(!morning || !dinner || !exType || !exTime || !phone) return alert("모든 항목을 입력해주세요.");
-
-            const log = {
-                date: new Date().toISOString(),
-                morning, dinner, exerciseType: exType, exerciseTime: exTime, phone
-            };
-
-            const me = this.data.currentUser;
-            const thisMonth = new Date().getMonth();
-            const monthlyCount = (me.logs || []).filter(l => new Date(l.date).getMonth() === thisMonth).length;
-            
-            // --- 영양소 분석 (시뮬레이션) ---
-            const foodStr = morning + dinner;
-            let dietAdvice = "";
-            if (foodStr.includes("라면") || foodStr.includes("햄버거") || foodStr.includes("피자")) {
-                dietAdvice = "\n\n[영양 분석] 나트륨과 지방이 조금 많아요. 내일은 채소를 더 먹어볼까요? 🥗";
-            } else if (foodStr.includes("샐러드") || foodStr.includes("나물")) {
-                dietAdvice = "\n\n[영양 분석] 비타민이 풍부한 식단이네요! 아주 건강해요! 👍";
-            } else {
-                dietAdvice = "\n\n[영양 분석] 균형 잡힌 식사를 위해 제철 과일도 챙겨 드세요! 🍎";
-            }
-
-            let msg = "저장되었습니다! 📝" + dietAdvice;
-            let newPoints = me.points;
-
-            if(monthlyCount === 20) {
-                newPoints += 100;
-                msg += "\n\n🎉 월 20회 기록 달성! +100P 지급!";
-            }
-
-            try {
-                // Firestore에 로그 추가 및 포인트 업데이트
-                await updateDoc(doc(db, "users", me.uid), {
-                    logs: arrayUnion(log),
-                    points: newPoints,
-                    lastActive: Date.now()
-                });
-                
-                // 로컬 데이터도 갱신 (화면 깜빡임 방지용)
-                if(!me.logs) me.logs = [];
-                me.logs.push(log);
-                me.points = newPoints;
-                
-                alert(msg);
-                
-                // 입력폼 초기화
-                document.getElementById('food-morning').value = '';
-                document.getElementById('food-dinner').value = '';
-                document.getElementById('exercise-type').value = '';
-                document.getElementById('exercise-time').value = '';
-                document.getElementById('phone-usage').value = '';
-                document.getElementById('phone-feedback').classList.add('hidden');
-                
-                this.showPage('student-main');
-                this.renderStudentMain(); 
-            } catch (e) {
-                alert("저장 실패: " + e.message);
-            }
-        },
-
-        // 독려 메시지 전송 (DB 연동은 간소화 - 로컬 alert만 유지하거나 실제론 users 컬렉션에 메시지 필드 추가 가능)
-        // 여기서는 기존 로직대로 Alert만 띄움
-        openWarningModal: function() {
-            document.getElementById('student-detail-modal').classList.add('hidden'); // 상세창 닫고
-            document.getElementById('warn-preset').value = "활동을 조금 더 열심히 해볼까요? 할 수 있어요!";
-            this.toggleCustomWarning();
-            document.getElementById('warning-modal').classList.remove('hidden');
-        },
-
-        toggleCustomWarning: function() {
-            const val = document.getElementById('warn-preset').value;
-            const customArea = document.getElementById('warn-custom');
-            if (val === 'custom') {
-                customArea.classList.remove('hidden');
-            } else {
-                customArea.classList.add('hidden');
-            }
-        },
-
-        sendWarningMessage: function() {
-            let msg = document.getElementById('warn-preset').value;
-            if (msg === 'custom') {
-                msg = document.getElementById('warn-custom').value;
-            }
-            if (!msg) return alert("메시지를 입력하세요.");
-            
-            // 실제 앱에선 push 알림 로직이 들어갈 곳
-            alert(`[전송 완료]\n내용: ${msg}`);
-            document.getElementById('warning-modal').classList.add('hidden');
-        },
-
         speakWord: function() {
             const word = document.getElementById('today-word').innerText;
             if ('speechSynthesis' in window) {
                 const msg = new SpeechSynthesisUtterance(word);
                 msg.lang = 'en-US'; 
                 window.speechSynthesis.speak(msg);
-            } else {
-                alert("이 브라우저는 음성 재생을 지원하지 않습니다.");
-            }
+            } else { alert("이 브라우저는 음성 재생을 지원하지 않습니다."); }
         }
     };
 
-    // 앱 실행
     app.init();
 </script>
 </body>
