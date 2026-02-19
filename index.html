@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>스마트 학교 생활 매니저</title>
+    <title>스쿨 매니저 - 스마트 학교 생활</title>
     <!-- Tailwind CSS (스타일링) -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Font Awesome (아이콘) -->
@@ -35,11 +35,14 @@
     <!-- 앱 컨테이너 -->
     <div id="app" class="max-w-md mx-auto min-h-screen bg-white shadow-2xl relative overflow-hidden flex flex-col">
         
-        <!-- 헤더 (공통) -->
+        <!-- 헤더 (공통) - 로그인 후에만 보임 -->
         <header id="main-header" class="bg-blue-600 text-white p-4 flex justify-between items-center hidden shadow-md sticky top-0 z-40">
-            <h1 class="text-lg font-bold cursor-pointer flex items-center gap-2" onclick="app.goHome()">
-                <i class="fas fa-school"></i> 스쿨 라이프
-            </h1>
+            <div class="flex flex-col cursor-pointer" onclick="app.goHome()">
+                <h1 class="text-lg font-bold flex items-center gap-2">
+                    <i class="fas fa-school"></i> 스쿨 매니저
+                </h1>
+                <span id="welcome-msg" class="text-xs text-blue-100 font-normal">환영합니다!</span>
+            </div>
             <div class="flex gap-2 items-center">
                 <!-- 학생용 포인트/상담 버튼 영역 -->
                 <div id="student-header-controls" class="hidden flex gap-2 items-center">
@@ -59,7 +62,7 @@
         <main class="flex-grow bg-gray-50 overflow-y-auto">
 
             <!-- 1. 로그인 페이지 -->
-            <div id="page-login" class="page active p-8 flex flex-col justify-center min-h-screen bg-blue-50">
+            <div id="page-login" class="page active p-8 flex flex-col justify-center min-h-screen bg-blue-50 relative z-50">
                 <div class="text-center mb-12">
                     <div class="inline-block p-4 rounded-full bg-white shadow-lg mb-4">
                         <i class="fas fa-graduation-cap text-5xl text-blue-600"></i>
@@ -116,21 +119,13 @@
                             </select>
                             <input type="date" id="notice-date" class="w-full border p-2 rounded">
                         </div>
-                        <button onclick="app.addNotice()" class="w-full bg-blue-500 text-white p-2 rounded font-bold hover:bg-blue-600">캘린더 등록</button>
+                        <button onclick="app.addNotice('admin')" class="w-full bg-blue-500 text-white p-2 rounded font-bold hover:bg-blue-600">캘린더 등록</button>
                     </div>
                 </div>
             </div>
 
             <!-- 3. 교사 페이지 -->
             <div id="page-teacher" class="page p-4">
-                <div class="bg-white p-4 rounded-xl shadow-sm mb-4 flex items-center justify-between">
-                    <div>
-                        <h2 class="text-xl font-bold text-gray-800">교무실</h2>
-                        <p class="text-xs text-gray-500">오늘도 힘찬 하루 되세요!</p>
-                    </div>
-                    <i class="fas fa-chalkboard-teacher text-3xl text-blue-200"></i>
-                </div>
-
                 <!-- 상담 신청 내역 알림 -->
                 <div id="teacher-consult-alert" class="hidden bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-4 rounded-r shadow-sm">
                     <div class="flex justify-between items-center">
@@ -139,6 +134,41 @@
                             <span class="font-bold text-yellow-700">새로운 상담 신청이 있습니다!</span>
                         </div>
                         <button onclick="app.showConsultationList()" class="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded hover:bg-yellow-300">확인하기</button>
+                    </div>
+                </div>
+
+                <!-- 교사용 캘린더 -->
+                <div class="card !p-0 overflow-hidden mb-6">
+                    <div class="p-4 border-b flex justify-between items-center bg-gray-50">
+                        <h3 class="font-bold text-gray-700"><i class="far fa-calendar-alt mr-1"></i> 학사 일정</h3>
+                        <span class="text-xs text-gray-500" id="teacher-month-display">2026.03</span>
+                    </div>
+                    <div class="calendar-grid bg-gray-200">
+                        <div class="calendar-header text-red-500">일</div>
+                        <div class="calendar-header">월</div>
+                        <div class="calendar-header">화</div>
+                        <div class="calendar-header">수</div>
+                        <div class="calendar-header">목</div>
+                        <div class="calendar-header">금</div>
+                        <div class="calendar-header text-blue-500">토</div>
+                        <div id="teacher-calendar-body" class="contents"></div>
+                    </div>
+                </div>
+
+                <!-- 교사용 일정 등록 -->
+                <div class="card bg-blue-50 border border-blue-100">
+                    <h3 class="font-bold text-sm mb-3 text-blue-800"><i class="fas fa-plus-circle"></i> 수행평가/일정 추가</h3>
+                    <div class="space-y-2">
+                        <input type="text" id="teacher-notice-content" placeholder="제목 (예: 1반 수학 수행평가)" class="w-full border p-2 rounded bg-white">
+                        <textarea id="teacher-notice-desc" placeholder="상세 내용 입력" class="w-full border p-2 rounded h-16 text-sm bg-white"></textarea>
+                        <div class="flex gap-2">
+                            <select id="teacher-notice-type" class="border p-2 rounded bg-white">
+                                <option value="exam">평가/과제</option>
+                                <option value="event">행사</option>
+                            </select>
+                            <input type="date" id="teacher-notice-date" class="w-full border p-2 rounded bg-white">
+                        </div>
+                        <button onclick="app.addNotice('teacher')" class="w-full bg-blue-600 text-white p-2 rounded font-bold hover:bg-blue-700">일정 등록하기</button>
                     </div>
                 </div>
 
@@ -171,10 +201,14 @@
                     <div class="absolute top-0 right-0 -mt-2 -mr-2 w-20 h-20 bg-white opacity-10 rounded-full blur-xl"></div>
                     <div class="relative z-10">
                         <span class="inline-block bg-white bg-opacity-20 rounded-full px-2 py-0.5 text-[10px] mb-2">Today's Pick</span>
-                        <div class="flex items-baseline gap-2 mb-1">
+                        <div class="flex items-center gap-2 mb-1">
                             <h2 id="today-word" class="text-2xl font-bold">Serendipity</h2>
-                            <span id="today-meaning" class="text-sm opacity-90">뜻밖의 기쁨</span>
+                            <button onclick="app.speakWord()" class="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-full w-8 h-8 flex items-center justify-center transition">
+                                <i class="fas fa-volume-up text-sm"></i>
+                            </button>
                         </div>
+                        <span id="today-meaning" class="text-sm opacity-90 block mb-2">뜻밖의 기쁨</span>
+                        
                         <div class="mt-3 pt-3 border-t border-white border-opacity-20">
                              <p id="today-quote" class="text-sm italic opacity-90 font-light">"노력은 배신하지 않는다."</p>
                         </div>
@@ -323,7 +357,7 @@
             </div>
         </div>
 
-        <!-- [모달] 교사: 학생 상세 정보 -->
+        <!-- [모달] 교사: 학생 상세 정보 및 알림 보내기 -->
         <div id="student-detail-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 px-4">
             <div class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl relative">
                 <button onclick="document.getElementById('student-detail-modal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600">
@@ -348,9 +382,31 @@
                     <!-- 로그 내용 -->
                 </div>
 
-                <button onclick="app.sendWarning()" class="w-full bg-red-100 text-red-600 font-bold py-2 rounded hover:bg-red-200 transition">
-                    <i class="fas fa-bell mr-1"></i>활동 독려 알림 보내기
+                <button onclick="app.openWarningModal()" class="w-full bg-red-100 text-red-600 font-bold py-2 rounded hover:bg-red-200 transition">
+                    <i class="fas fa-paper-plane mr-1"></i>학생에게 독려 알림/메시지 보내기
                 </button>
+            </div>
+        </div>
+
+        <!-- [모달] 교사: 독려 알림 메시지 작성 -->
+        <div id="warning-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] px-4">
+            <div class="bg-white p-6 rounded-2xl w-full max-w-sm shadow-2xl">
+                <h2 class="text-lg font-bold mb-2">학생에게 메시지 보내기</h2>
+                <p class="text-xs text-gray-500 mb-3">응원의 말이나 활동 독려 메시지를 선택해주세요.</p>
+                
+                <select id="warn-preset" class="w-full border p-2 rounded mb-3 text-sm" onchange="app.toggleCustomWarning()">
+                    <option value="활동을 조금 더 열심히 해볼까요? 할 수 있어요!">💪 활동 독려: "조금 더 열심히 해볼까요?"</option>
+                    <option value="꾸준함이 실력입니다! 오늘도 화이팅!">🌟 응원: "꾸준함이 실력입니다!"</option>
+                    <option value="수행평가 일정을 확인해주세요.">📅 일정 알림: "일정을 확인해주세요."</option>
+                    <option value="custom">직접 입력...</option>
+                </select>
+                
+                <textarea id="warn-custom" class="w-full border p-2 rounded mb-4 h-20 text-sm hidden" placeholder="메시지를 직접 입력하세요."></textarea>
+                
+                <div class="flex gap-2">
+                    <button onclick="app.sendWarningMessage()" class="flex-1 bg-blue-600 text-white p-2 rounded font-bold hover:bg-blue-700">전송</button>
+                    <button onclick="document.getElementById('warning-modal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 p-2 rounded font-bold hover:bg-gray-300">취소</button>
+                </div>
             </div>
         </div>
 
@@ -361,6 +417,7 @@
 const app = {
     data: {
         currentUser: null,
+        currentStudentIdForMsg: null, // 메시지 보낼 학생 ID 임시 저장
         users: [
             { id: 'teacher1', pw: '1234', name: '김교사', role: 'teacher', students: [] },
             { id: 'student1', pw: '1234', name: '이학생', role: 'student', teacherId: 'teacher1', points: 150, avgPhone: 180, logs: [], lastActive: Date.now() },
@@ -413,9 +470,9 @@ const app = {
         
         const header = document.getElementById('main-header');
         if(pageId === 'login') {
-            header.classList.add('hidden');
+            header.classList.add('hidden'); // 로그인 페이지에선 헤더 숨김
         } else {
-            header.classList.remove('hidden');
+            header.classList.remove('hidden'); // 그 외엔 보임
         }
     },
 
@@ -424,6 +481,7 @@ const app = {
         const pw = prompt("관리자 비밀번호를 입력하세요 (1234)");
         if (pw === '1234') {
             this.data.currentUser = { role: 'admin', name: '관리자' };
+            this.updateHeaderWelcome();
             this.renderAdmin();
             this.showPage('admin');
         } else {
@@ -446,6 +504,8 @@ const app = {
         if (user) {
             this.data.currentUser = user;
             document.getElementById('login-form-modal').classList.add('hidden');
+            this.updateHeaderWelcome(); // 환영 문구 업데이트
+
             if (user.role === 'teacher') {
                 this.renderTeacher();
                 this.showPage('teacher');
@@ -456,6 +516,13 @@ const app = {
         } else {
             alert("아이디 또는 비밀번호를 확인해주세요.");
         }
+    },
+
+    updateHeaderWelcome: function() {
+        if (!this.data.currentUser) return;
+        const msg = document.getElementById('welcome-msg');
+        const role = this.data.currentUser.role === 'teacher' ? '선생님' : (this.data.currentUser.role === 'student' ? '학생' : '관리자');
+        msg.innerText = `환영합니다, ${this.data.currentUser.name} ${role}`;
     },
 
     logout: function() {
@@ -510,11 +577,21 @@ const app = {
         document.getElementById('create-pw').value = '';
     },
 
-    addNotice: function() {
-        const content = document.getElementById('notice-content').value;
-        const desc = document.getElementById('notice-desc').value;
-        const date = document.getElementById('notice-date').value;
-        const type = document.getElementById('notice-type').value;
+    addNotice: function(source) {
+        // 관리자와 교사가 사용하는 ID가 다름
+        let content, desc, date, type;
+        
+        if (source === 'admin') {
+            content = document.getElementById('notice-content').value;
+            desc = document.getElementById('notice-desc').value;
+            date = document.getElementById('notice-date').value;
+            type = document.getElementById('notice-type').value;
+        } else {
+            content = document.getElementById('teacher-notice-content').value;
+            desc = document.getElementById('teacher-notice-desc').value;
+            date = document.getElementById('teacher-notice-date').value;
+            type = document.getElementById('teacher-notice-type').value;
+        }
 
         if(!content || !date) return alert('제목과 날짜는 필수입니다.');
 
@@ -526,15 +603,27 @@ const app = {
             type: type 
         });
         this.saveData();
-        alert('일정이 등록되었습니다.');
-        document.getElementById('notice-content').value = '';
-        document.getElementById('notice-desc').value = '';
+        alert('일정이 등록되었습니다. 모든 학생의 캘린더에 연동됩니다.');
+        
+        // 입력창 초기화
+        if (source === 'admin') {
+            document.getElementById('notice-content').value = '';
+            document.getElementById('notice-desc').value = '';
+        } else {
+            document.getElementById('teacher-notice-content').value = '';
+            document.getElementById('teacher-notice-desc').value = '';
+            this.renderCalendar(new Date().getFullYear(), new Date().getMonth(), 'teacher-calendar-body', 'teacher-month-display');
+        }
     },
 
     // ---------------- 교사 기능 ----------------
     renderTeacher: function() {
         // 학생 헤더 컨트롤 숨김 (교사는 상담 버튼 X)
         document.getElementById('student-header-controls').classList.add('hidden');
+
+        // 교사용 캘린더 렌더링
+        const now = new Date();
+        this.renderCalendar(now.getFullYear(), now.getMonth(), 'teacher-calendar-body', 'teacher-month-display');
 
         // 학생 목록 렌더링
         const list = document.getElementById('student-list');
@@ -615,6 +704,7 @@ const app = {
     },
 
     showStudentDetail: function(studentId) {
+        this.data.currentStudentIdForMsg = studentId; // 메시지 보낼 ID 저장
         const student = this.data.users.find(u => u.id === studentId);
         if (!student) return;
 
@@ -637,13 +727,40 @@ const app = {
             `;
         });
 
-        const warnBtn = document.querySelector('#student-detail-modal button[onclick*="sendWarning"]');
-        warnBtn.onclick = () => {
-            alert(`${student.name} 학생에게 알림을 보냈습니다.`);
-            document.getElementById('student-detail-modal').classList.add('hidden');
-        };
-
         document.getElementById('student-detail-modal').classList.remove('hidden');
+    },
+
+    // 독려 알림 (메시지) 관련
+    openWarningModal: function() {
+        document.getElementById('student-detail-modal').classList.add('hidden'); // 상세창 닫고
+        document.getElementById('warn-preset').value = "활동을 조금 더 열심히 해볼까요? 할 수 있어요!";
+        this.toggleCustomWarning();
+        document.getElementById('warning-modal').classList.remove('hidden');
+    },
+
+    toggleCustomWarning: function() {
+        const val = document.getElementById('warn-preset').value;
+        const customArea = document.getElementById('warn-custom');
+        if (val === 'custom') {
+            customArea.classList.remove('hidden');
+        } else {
+            customArea.classList.add('hidden');
+        }
+    },
+
+    sendWarningMessage: function() {
+        let msg = document.getElementById('warn-preset').value;
+        if (msg === 'custom') {
+            msg = document.getElementById('warn-custom').value;
+        }
+        
+        if (!msg) return alert("메시지를 입력하세요.");
+        
+        // 실제로는 DB에 알림을 저장하거나 푸시를 보내겠지만, 여기서는 alert로 시뮬레이션
+        const student = this.data.users.find(u => u.id === this.data.currentStudentIdForMsg);
+        alert(`[전송 완료]\n받는 사람: ${student.name} 학생\n내용: ${msg}`);
+        
+        document.getElementById('warning-modal').classList.add('hidden');
     },
 
     // ---------------- 학생 기능 ----------------
@@ -660,14 +777,27 @@ const app = {
 
         // 캘린더 그리기 (현재 날짜 기준)
         const now = new Date();
-        this.renderCalendar(now.getFullYear(), now.getMonth());
+        this.renderCalendar(now.getFullYear(), now.getMonth(), 'calendar-body', 'current-month-display');
     },
 
-    renderCalendar: function(year, month) {
-        const container = document.getElementById('calendar-body');
-        container.innerHTML = '';
+    speakWord: function() {
+        const word = document.getElementById('today-word').innerText;
+        if ('speechSynthesis' in window) {
+            const msg = new SpeechSynthesisUtterance(word);
+            msg.lang = 'en-US'; // 영어 발음
+            window.speechSynthesis.speak(msg);
+        } else {
+            alert("이 브라우저는 음성 재생을 지원하지 않습니다.");
+        }
+    },
+
+    // 캘린더 공통 렌더링 함수 (학생/교사 공용)
+    renderCalendar: function(year, month, containerId, monthDisplayId) {
+        const container = document.getElementById(containerId);
+        if(!container) return;
         
-        document.getElementById('current-month-display').innerText = `${year}.${String(month + 1).padStart(2, '0')}`;
+        container.innerHTML = '';
+        document.getElementById(monthDisplayId).innerText = `${year}.${String(month + 1).padStart(2, '0')}`;
 
         const firstDay = new Date(year, month, 1).getDay();
         const lastDate = new Date(year, month + 1, 0).getDate();
@@ -802,10 +932,22 @@ const app = {
         const thisMonth = new Date().getMonth();
         const monthlyCount = me.logs.filter(l => new Date(l.date).getMonth() === thisMonth).length;
         
-        let msg = "저장되었습니다! 📝";
+        // --- 영양소 분석 (시뮬레이션) ---
+        const foodStr = morning + dinner;
+        let dietAdvice = "";
+        if (foodStr.includes("라면") || foodStr.includes("햄버거") || foodStr.includes("피자")) {
+            dietAdvice = "\n\n[영양 분석] 나트륨과 지방이 조금 많아요. 내일은 채소를 더 먹어볼까요? 🥗";
+        } else if (foodStr.includes("샐러드") || foodStr.includes("나물")) {
+            dietAdvice = "\n\n[영양 분석] 비타민이 풍부한 식단이네요! 아주 건강해요! 👍";
+        } else {
+            dietAdvice = "\n\n[영양 분석] 균형 잡힌 식사를 위해 제철 과일도 챙겨 드세요! 🍎";
+        }
+
+        let msg = "저장되었습니다! 📝" + dietAdvice;
+        
         if(monthlyCount === 20) {
             me.points += 100;
-            msg += "\n🎉 월 20회 기록 달성! +100P 지급!";
+            msg += "\n\n🎉 월 20회 기록 달성! +100P 지급!";
         }
 
         const userIndex = this.data.users.findIndex(u => u.id === me.id);
